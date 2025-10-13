@@ -10,11 +10,14 @@ import CreatePost from "./pages/CreatePost.jsx";
 import Profile from "./pages/Profile.jsx";
 import Layout from "./pages/Layout.jsx";
 import { useUser } from "@clerk/clerk-react";
+import {Toaster} from 'react-hot-toast'
 
 const App = () => {
   const { user } = useUser();
 
   return (
+    <>
+    <Toaster/>
     <Routes>
       {/* If user is not logged in → Login page */}
       {!user ? (
@@ -33,6 +36,7 @@ const App = () => {
         </Route>
       )}
     </Routes>
+    </>
   );
 };
 
