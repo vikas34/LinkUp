@@ -30,13 +30,8 @@ const Connections = () => {
       <div className="max-w-6xl mx-auto p-6">
         {/* Title */}
         <div className="mb-8 ">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            {" "}
-            Connections
-          </h1>
-          <p className="text-slate-600">
-            Manage your network and discover new connections
-          </p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Connections</h1>
+          <p className="text-slate-600">Manage your network and discover new connections</p>
         </div>
 
         {/* Counts */}
