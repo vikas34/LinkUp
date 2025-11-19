@@ -20,8 +20,8 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
       <div className="w-full">
         <img
           onClick={() => navigate("/")}
-          src="./logo.png"
-          alt=""
+          src="/logo.png"
+          alt="logo"
           className="w-26 h-11 sm:w-28 ml-7 my-2 cursor-pointer"
         />
         <hr className="border-gray-300 mb-8" />
