@@ -7,6 +7,7 @@ import UserProfileInfo from "../components/UserProfileInfo.jsx";
 import PostCard from "../components/PostCard.jsx";
 import moment from "moment";
 import { Link } from "react-router-dom";
+import ProfileModal from "../components/ProfileModal.jsx";
 
 const Profile = () => {
   const { profileId } = useParams();
@@ -111,7 +112,7 @@ const Profile = () => {
           )}
         </div>
       </div>
-      {showEdit &&  <p>Show Profile Edit</p>}
+      {showEdit &&  <ProfileModal setShowEdit={setShowEdit}/>}
     </div>
   ) : (
     <Loading />
