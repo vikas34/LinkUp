@@ -5,6 +5,7 @@ const postSchema = new mongoose.Schema(
     user: {
       type: String, // Clerk userId
       required: true,
+      ref:'User'
     },
 
     content: {
@@ -31,6 +32,7 @@ const postSchema = new mongoose.Schema(
     likes_count: {
       type: Number,
       default: 0,
+       ref:'User'
     },
   },
   { timestamps: true }
