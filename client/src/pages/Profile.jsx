@@ -1,29 +1,59 @@
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { dummyPostsData, dummyUserData } from "../assets/assets";
+// import { dummyPostsData, dummyUserData } from "../assets/assets";
 import Loading from "../components/Loading";
 import UserProfileInfo from "../components/UserProfileInfo.jsx";
 import PostCard from "../components/PostCard.jsx";
 import moment from "moment";
 import { Link } from "react-router-dom";
 import ProfileModal from "../components/ProfileModal.jsx";
+import { useAuth } from "@clerk/clerk-react";
+import api from "../api/axios.js";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
 
 const Profile = () => {
+  const currentUser = useSelector((state) => state.user.value);
+  const { getToken } = useAuth();
   const { profileId } = useParams();
-  const [user, setUSer] = useState(null);
+  const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [activeTab, setActiveTab] = useState("posts");
   const [showEdit, setShowEdit] = useState(false);
 
-  const fetchUSer = async () => {
-    setUSer(dummyUserData);
-    setPosts(dummyPostsData);
+  const fetchUSer = async (profileId) => {
+    console.log("fetchUSer called with", profileId);
+    const token = await getToken();
+    console.log("token:", token);
+    try {
+      const { data } = await api.post(
+        `/api/user/profiles`,
+        { profileId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+       console.log("response:", data);
+      if (data.success) {
+        setUser(data.profile);
+        setPosts(data.posts);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+       console.log("fetchUser error:", error);
+      toast.error(error.message);
+    }
   };
 
   useEffect(() => {
-    fetchUSer();
-  }, []);
+    if (profileId) {
+      fetchUSer(profileId);
+    } else {
+      fetchUSer(currentUser._id);
+    }
+  }, [profileId, currentUser]);
   return user ? (
     <div className="relative h-full overflow-y-scroll bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
@@ -112,7 +142,7 @@ const Profile = () => {
           )}
         </div>
       </div>
-      {showEdit &&  <ProfileModal setShowEdit={setShowEdit}/>}
+      {showEdit && <ProfileModal setShowEdit={setShowEdit} />}
     </div>
   ) : (
     <Loading />

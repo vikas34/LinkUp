@@ -1,9 +1,10 @@
 import React, { use } from 'react'
 import { dummyUserData } from '../assets/assets'
 import { MapPin, MessageCircle, Plus, UserPlus } from 'lucide-react'
+import { useSelector } from 'react-redux';
 
 const UserCard = ({user}) => {
-    const currentUSer = dummyUserData
+    const currentUSer = useSelector((state)=> state.user.value);
     const handleFollow = async ()=>{
         
     }
