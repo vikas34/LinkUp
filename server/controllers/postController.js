@@ -89,16 +89,14 @@ export const likePost = async (req, res) => {
       return res.json({ success: false, message: "Post not found" });
     }
 
-    if (post.likes_count.includes(userId)) {
-      post.likes_count = post.likes_count.filter(
-        (id) => id.toString() !== userId
-      );
+    if (post.likes.includes(userId)) {
+      post.likes = post.likes.filter((id) => id !== userId);
       await post.save();
-      res.json({ success: true, message: "Post unliked" });
+      return res.json({ success: true, message: "Post unliked" });
     } else {
-      post.likes_count.push(userId);
+      post.likes.push(userId);
       await post.save();
-      res.json({ success: true, message: "Post liked" });
+      return res.json({ success: true, message: "Post liked" });
     }
   } catch (error) {
     console.error(error);

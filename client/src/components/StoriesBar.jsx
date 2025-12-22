@@ -4,14 +4,32 @@ import { Plus } from "lucide-react";
 import moment from "moment";
 import StoryModel from "./StoryModel";
 import StoryViewer from "./StoryViewer";
+import { useAuth } from "@clerk/clerk-react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 const StoriesBar = () => {
+  const { getToken } = useAuth();
+
   const [stories, setStories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [viewStory, setViewStory] = useState(null);
 
   const fetchStories = async () => {
-    setStories(dummyStoriesData);
+    // setStories(dummyStoriesData);
+    try {
+      const token = await getToken();
+      const { data } = await api.get("/api/story/get", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.success) {
+        setStories(data.stories);
+      } else {
+        toast(data.message);
+      }
+    } catch (error) {
+      toast(error.message);
+    }
   };
 
   useEffect(() => {
@@ -21,7 +39,8 @@ const StoriesBar = () => {
     <div className=" w-screen sm:w-[calc(100vw-240px)] lg:max-w-2xl no-scrollbar overflow-x-auto px-4">
       <div className="flex gap-4 pb-5">
         {/* Add Story Card */}
-        <div onClick={()=>setShowModal(true)}
+        <div
+          onClick={() => setShowModal(true)}
           className="rounded-lg shadow-sm min-w-30 max-w-30 max-h-40 aspect-[3/4] cursor-pointer hover:shadow-lg transition-all duration-200 
             border-2 border-dashed border-indigo-300 bg-gradient-to-b from-indigo-50 to-white"
         >
@@ -36,7 +55,8 @@ const StoriesBar = () => {
         </div>
         {/* Story Card */}
         {stories.map((story, index) => (
-          <div onClick={()=>setViewStory(story)}
+          <div
+            onClick={() => setViewStory(story)}
             key={index}
             className={`relative rounded-lg shadow min-w-30 max-w-30 max-h-40 cursor-pointer hover:shadow-lg 
                     transition-all duration-200 bg-gradient-to-b from-indigo-500 to-purple-600 hover:from-indigo-700 
@@ -73,10 +93,14 @@ const StoriesBar = () => {
         ))}
       </div>
       {/* ---------Add Story Model----------*/}
-      {showModal && <StoryModel setShowModal={setShowModal} fetchStories={fetchStories}/>}
+      {showModal && (
+        <StoryModel setShowModal={setShowModal} fetchStories={fetchStories} />
+      )}
 
       {/*---------- View Story Model-------- */}
-      {viewStory && <StoryViewer viewStory={viewStory} setViewStory={setViewStory}/>}
+      {viewStory && (
+        <StoryViewer viewStory={viewStory} setViewStory={setViewStory} />
+      )}
     </div>
   );
 };

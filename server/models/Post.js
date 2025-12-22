@@ -5,7 +5,7 @@ const postSchema = new mongoose.Schema(
     user: {
       type: String, // Clerk userId
       required: true,
-      ref:'User'
+      ref: "User",
     },
 
     content: {
@@ -14,7 +14,7 @@ const postSchema = new mongoose.Schema(
     },
 
     image_urls: {
-      type: [String], // array of image URLs
+      type: [String],
       default: [],
     },
 
@@ -28,15 +28,8 @@ const postSchema = new mongoose.Schema(
       type: [String], // userIds who liked
       default: [],
     },
-
-    likes_count: {
-      type: Number,
-      default: 0,
-       ref:'User'
-    },
   },
   { timestamps: true }
 );
 
-const Post = mongoose.model("Post", postSchema);
-export default Post;
+export default mongoose.model("Post", postSchema);
