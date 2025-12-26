@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Users,
   UserPlus,
@@ -9,29 +9,91 @@ import {
   User,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  dummyConnectionsData as connections,
-  dummyFollowersData as followers,
-  dummyFollowingData as following,
-  dummyPendingConnectionsData as pendingConnections,
-} from "../assets/assets";
+import { useSelector, useDispatch } from "react-redux";
+import { useAuth } from "@clerk/clerk-react";
+import { fetchConnections } from "../features/connections/connectionsSlice.js";
+import api from "../api/axios";
+import toast from "react-hot-toast";
+// import {
+
+//   dummyConnectionsData as connections,
+//   dummyFollowersData as followers,
+//   dummyFollowingData as following,
+//   dummyPendingConnectionsData as pendingConnections,
+// } from "../assets/assets";
 
 const Connections = () => {
   const [currentTab, setCurrentTab] = useState("Followers");
   const navigate = useNavigate();
+  const { getToken } = useAuth();
+  const dispatch = useDispatch();
+  const { connections, pendingConnections, followers, following } = useSelector(
+    (state) => state.connections
+  );
   const dataArray = [
     { label: "Followers", value: followers, Icon: Users },
     { label: "Following", value: following, Icon: UserCheck },
     { label: "Pending", value: pendingConnections, Icon: UserRoundPen },
     { label: "Connections", value: connections, Icon: UserPlus },
   ];
+
+  const handleUnfollow = async (userId) => {
+    try {
+      const { data } = await api.post(
+        "/api/user/unfollow",
+        { id: userId },
+        {
+          headers: { Authorization: `Bearer ${await getToken()}` },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        dispatch(fetchConnections(await getToken()));
+      } else {
+        toast(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+    const acceptConnections = async (userId) => {
+    try {
+      const { data } = await api.post(
+        "/api/user/accept",
+        { id: userId },
+        {
+          headers: { Authorization: `Bearer ${await getToken()}` },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        dispatch(fetchConnections(await getToken()));
+      } else {
+        toast(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+
+  useEffect(() => {
+    getToken().then((token) => {
+      dispatch(fetchConnections(token));
+    });
+  },[dispatch, getToken]);
   return (
     <div className="h-full bg-slate-50">
       <div className="max-w-6xl mx-auto p-6">
         {/* Title */}
         <div className="mb-8 ">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Connections</h1>
-          <p className="text-slate-600">Manage your network and discover new connections</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Connections
+          </h1>
+          <p className="text-slate-600">
+            Manage your network and discover new connections
+          </p>
         </div>
 
         {/* Counts */}
@@ -100,7 +162,7 @@ const Connections = () => {
                       </button>
                     }
                     {currentTab === "Following" && (
-                      <button
+                      <button onClick={()=> handleUnfollow(user._id)}
                         className="w-full p-2 text-sm rounded bg-slate-100 hover:bg-slate-200 text-black active:scale-95 
                       transition cursor-pointer"
                       >
@@ -108,7 +170,7 @@ const Connections = () => {
                       </button>
                     )}
                     {currentTab === "Pending" && (
-                      <button
+                      <button onClick={()=> acceptConnections(user._id)}
                         className="w-full p-2 text-sm rounded bg-slate-100 hover:bg-slate-200 text-black active:scale-95 
                       transition cursor-pointer"
                       >

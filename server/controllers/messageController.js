@@ -34,6 +34,7 @@ export const sseController = (req, res) => {
 };
 
 //------------------Send Message------------
+
 export const sendMessage = async (req, res) => {
   try {
     const { userId } = req.auth();
@@ -43,21 +44,34 @@ export const sendMessage = async (req, res) => {
     let media_url = "";
     let message_type = image ? "image" : "text";
 
-    if (message_type === "image") {
-      const fileBuffer = fs.readFileSync(image.path);
-      const response = await imagekit.upload({
-        file: fileBuffer,
-        filleName: image.originalname,
+    if (image) {
+      if (!image.path) {
+        throw new Error("Upload error: image.path is undefined.");
+      }
+
+      // Upload to ImageKit using stream
+      const fileStream = fs.createReadStream(image.path);
+
+      const response = await imagekit.files.upload({
+        file: fileStream,
+        fileName: image.originalname,
       });
 
-      media_url = imagekit.url({
-        path: response.filePath,
+      // ✅ Correct URL generation
+      media_url = imagekit.helper.buildSrc({
+        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+        src: response.filePath,
         transformation: [
-          { quality: "auto" },
-          { format: "webp" },
-          { width: "1280" },
+          {
+            width: 1280,
+            quality: "auto",
+            format: "webp",
+          },
         ],
       });
+
+      // Remove temp file
+      fs.unlinkSync(image.path);
     }
 
     const message = await Message.create({
@@ -70,11 +84,8 @@ export const sendMessage = async (req, res) => {
 
     res.json({ success: true, message });
 
-    //send message to to_user_id using SSE
-
-    const messageWithUserData = await Message.findById(message._id).populate(
-      "from_user_id"
-    );
+    const messageWithUserData = await Message.findById(message._id)
+      .populate("from_user_id");
 
     if (connections[to_user_id]) {
       connections[to_user_id].write(
@@ -82,10 +93,13 @@ export const sendMessage = async (req, res) => {
       );
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("sendMessage error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+
 
 //----------------Get Chat Messages----------
 export const getChatMessages = async (req, res) => {
@@ -110,12 +124,12 @@ export const getChatMessages = async (req, res) => {
   }
 };
 
-export const getUSerRecentMessages = async (req, res) => {
+export const getUserRecentMessages = async (req, res) => {
   try {
     const { userId } = req.auth();
     const messages = await Message.find(
-      { to_user_id: userId }.populate("from_user_id to to_user_id")
-    ).sort({ created_at: -1 });
+      { to_user_id: userId }).populate("from_user_id to_user_id")
+    .sort({ created_at: -1 });
 
     res.json({ success: true, messages });
   } catch (error) {

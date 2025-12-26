@@ -2,12 +2,55 @@ import React, { useEffect, useState } from "react";
 import { dummyRecentMessagesData } from "../assets/assets";
 import { Link } from "react-router-dom";
 import moment from "moment";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 const RecentMessages = () => {
   const [messages, setMessages] = useState([]);
+  const { user } = useUser();
+  const { getToken } = useAuth();
   const fetchRecentMessges = async () => {
-    setMessages(dummyRecentMessagesData);
+    try {
+      const token = await getToken();
+      const { data } = await api.get("/api/user/recent-messages", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.success) {
+        // Group message by sender and get the latest message for each sender
+        const groupMEssages = data.messages.reduce((acc, message) => {
+          const senderId = message.from_user_id._id;
+          if (
+            !acc[senderId] ||
+            new Date(message.createdAt) > new Date(acc[senderId].createdAt)
+          ) {
+            acc[senderId] = message;
+          }
+          return acc;
+        }, {});
+
+        //sort messages by date
+        const sortMessages = Object.values(groupMEssages).sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setMessages(sortMessages);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchRecentMessges();
+      setInterval(fetchRecentMessges, 3000);
+      return () => {
+        clearInterval();
+      };
+    }
+  }, []);
 
   useEffect(() => {
     fetchRecentMessges();
@@ -18,7 +61,7 @@ const RecentMessages = () => {
       <div className="flex flex-col max-h-56 overflow-y-scroll no-scrollbar">
         {messages.map((message, index) => (
           <Link
-            to={`/messages/${message.from_user_id._id}`}
+            to={`/message/${message.from_user_id._id}`}
             key={index}
             className="flex items-start gap-2 py-2 hover:bg-slate-100"
           >
