@@ -43,14 +43,15 @@ const RecentMessages = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchRecentMessges();
-      setInterval(fetchRecentMessges, 3000);
-      return () => {
-        clearInterval();
-      };
-    }
-  }, []);
+  if (!user) return;
+
+  fetchRecentMessges();
+
+  const intervalId = setInterval(fetchRecentMessges, 3000);
+
+  return () => clearInterval(intervalId);
+}, [user]);
+
 
   useEffect(() => {
     fetchRecentMessges();
