@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { dummyMessagesData, dummyUserData } from "../assets/assets";
 import { ImageIcon, SendHorizonal } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -13,7 +12,9 @@ import {
 import toast from "react-hot-toast";
 
 const ChatBox = () => {
-  const { messages } = useSelector((state) => state.messages);
+  const messagesData = useSelector((state) => state.messages);
+  const messages = messagesData?.messages || []; // Always array!
+  
   const { userId } = useParams();
   const { getToken } = useAuth();
   const dispatch = useDispatch();
@@ -21,7 +22,7 @@ const ChatBox = () => {
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [user, setUser] = useState(null);
-  const messgaesEndRef = useRef(null);
+  const messagesEndRef = useRef(null); 
 
   const connections = useSelector((state) => state.connections.connections);
 
@@ -46,6 +47,7 @@ const ChatBox = () => {
       const { data } = await api.post("/api/message/send", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       if (data.success) {
         setText("");
         setImage(null);
@@ -60,26 +62,23 @@ const ChatBox = () => {
 
   useEffect(() => {
     fetchUserMessages();
-
-    // return () => {
-    //   dispatch(resetMessages());
-    // };
-  }, [userId, dispatch]);
+  }, [userId, dispatch, getToken]);
 
   useEffect(() => {
-    if (connections.length > 0) {
+    if (connections?.length > 0) {
       const user = connections.find((connection) => connection._id === userId);
       setUser(user);
     }
   }, [connections, userId]);
 
   useEffect(() => {
-    messgaesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
     user && (
       <div className="flex flex-col h-full">
+        {/* Header */}
         <div className="flex items-center gap-2 p-2 md:px-10 xl:pl-42 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-300">
           <img
             src={user.profile_picture}
@@ -92,66 +91,62 @@ const ChatBox = () => {
           </div>
         </div>
 
+        {/* Messages Container */}
         <div className="p-5 md:px-10 h-full overflow-y-scroll">
           <div className="space-y-4 max-w-4xl mx-auto">
-            {[...messages]
-              .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+         
+            {messages
+              ?.slice() 
+              .sort((a, b) => new Date(a.createdAt || a.created_at) - new Date(b.createdAt || b.created_at))
               .map((message, index) => (
                 <div
-                  key={index}
+                  key={message._id || index}
                   className={`flex flex-col ${
-                    message.to_user_id !== user._id
-                      ? "items-start"
-                      : "items-end"
+                    message.to_user_id !== user._id ? "items-start" : "items-end"
                   }`}
                 >
                   <div
                     className={`p-2 text-sm max-w-sm bg-white text-slate-700 rounded-lg shadow ${
-                      message.to_user_id !== user._id
-                        ? "rounded-bl-none"
-                        : "rounded-br-none"
+                      message.to_user_id !== user._id ? "rounded-bl-none" : "rounded-br-none"
                     }`}
                   >
-                    {message.message_type === "image" && (
+                    {message.message_type === "image" && message.media_url && (
                       <img
                         src={message.media_url}
                         alt=""
                         className="w-full max-w-sm rounded-lg mb-1"
+                        onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     )}
-
-                    <p>{message.text}</p>
+                    {message.text && <p>{message.text}</p>}
                   </div>
                 </div>
-              ))}
+              )) || <p className="text-gray-500 text-center py-8">No messages yet</p>}
 
-            <div ref={messgaesEndRef} />
+            <div ref={messagesEndRef} />
           </div>
         </div>
 
+        {/* Input */}
         <div className="px-4">
-          <div
-            className="flex items-center gap-3 pl-5 p-1.5 bg-white w-full max-w-xl mx-auto border border-gray-200 shadow rounded-full
-          mb-5"
-          >
+          <div className="flex items-center gap-3 pl-5 p-1.5 bg-white w-full max-w-xl mx-auto border border-gray-200 shadow rounded-full mb-5">
             <input
               type="text"
-              className="flex-1 outline-none text-slate-700 "
+              className="flex-1 outline-none text-slate-700"
               placeholder="Type a message...."
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               onChange={(e) => setText(e.target.value)}
               value={text}
             />
 
-            <label htmlFor="image">
+            <label htmlFor="image" className="cursor-pointer">
               {image ? (
-                <img src={URL.createObjectURL(image)} className="h-8 rounded" />
+                <img src={URL.createObjectURL(image)} className="h-8 w-8 rounded object-cover" />
               ) : (
-                <ImageIcon className="size-7 text-gray-500 cursor-pointer" />
+                <ImageIcon className="size-7 text-gray-500" />
               )}
               <input
                 type="file"
-                name=""
                 id="image"
                 accept="image/*"
                 hidden
@@ -161,8 +156,8 @@ const ChatBox = () => {
 
             <button
               onClick={sendMessage}
-              className="bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-800
-            active:scale-95 cursor-pointer text-white p-2 rounded-full"
+              disabled={!text && !image}
+              className="bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer text-white p-2 rounded-full transition-all"
             >
               <SendHorizonal size={18} />
             </button>
